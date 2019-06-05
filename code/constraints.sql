@@ -79,8 +79,87 @@ begin
 	end catch
 end
 
---7
+/* 
+Constraint 7 An active employee cannot be managed by a terminated employee. 
+- Als er in memp een manager geinsert wordt die in term staat dan wordt de constraint geschonden.
+- Als een manager die in memp staat geinsert wordt in term.
+- Als een manager in memp geupdate wordt naar een employee die in term staat.
+*/
+go
+create or alter proc usp_insert_mgr
+@empno numeric(4),
+@mgr numeric(4)
+as
+begin
+	begin try
+		if exists (select empno from term where empno = @mgr)
+			begin
+				declare @msg varchar(100)
+				select @msg = 'Employee ' + cast(@mgr as varchar(100)) + ' cant be a manager because he doesnt work here anymore'
+				raiserror(@msg, 11, 1)
+			end
+		else
+			begin
+				insert into memp values (@empno, @mgr)
+			end
+	end try
+	begin catch
+		throw
+	end catch
+end
 
+go
+
+create or alter proc usp_insert_term
+@empno numeric(4),
+@leftcomp date,
+@comments varchar(60)
+as
+begin
+	begin try
+		if exists(select mgr from memp where mgr = @empno)
+			begin
+				declare @msg varchar(100)
+				select @msg = 'Employee ' + CAST(@empno as varchar(10)) + ' is a managing employee and cant be terminated'
+				raiserror (@msg, 11, 1)
+			end
+		else
+			begin
+				insert into term values (@empno, @leftcomp, @comments)
+			end
+	end try
+	begin catch
+		throw
+	end catch
+end
+
+go
+
+create or alter proc usp_update_mgr
+@mgr numeric(4),
+@empno numeric(4)
+as
+
+begin
+	begin try
+		if exists (select empno from term where empno = @mgr)
+			begin
+				declare @msg varchar(100)
+				select @msg = 'Employee ' + CAST(@mgr as varchar(10)) + ' cant be a manager because he is terminated'
+				raiserror(@msg, 11, 1)
+			end
+		else
+			begin
+				update memp
+				set mgr = @mgr
+				where empno = @empno
+			end
+	end try
+	begin catch
+		throw
+	end catch
+end
+go
 --8
 Create proc chk_trainer_course
 (

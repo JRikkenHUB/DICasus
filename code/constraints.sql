@@ -199,3 +199,167 @@ begin
 		rollback tran
 	end catch
 end
+
+--9
+Create proc insert_trainer_offerings(
+@course varchar(6),
+@starts date,
+@status varchar(4),
+@maxcap numeric(2),
+@trainer numeric(4),
+@loc varchar(14)
+)
+as
+begin
+	declare @home_location varchar(14);
+	declare @home_course_duration int;
+	declare @total_duration int;
+	declare @new_time int;
+	begin try
+		
+		set @home_location = (select loc from emp e
+								left join dept d on e.deptno = d.deptno
+								where empno = @trainer);
+
+		set @home_course_duration = (select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where loc = @home_location and trainer = @trainer)
+
+		set @total_duration = (select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where trainer = @trainer)
+
+		set @new_time = (select dur from crs where code = @course)
+
+
+		if(@loc <> @home_location)
+			set @total_duration = (@total_duration + @new_time)
+		else
+			set @home_course_duration = (@home_course_duration + @new_time)
+
+
+		if(100 * @home_course_duration / @total_duration < 50)
+			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
+		else
+			insert into offr values (@course, @starts, @status, @maxcap, @trainer, @loc);
+
+	end try
+	begin catch
+		throw
+	end catch
+
+end
+
+exec insert_trainer_offerings 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
+
+Create proc update_trainer_offerings(
+@oldCourse varchar(6),
+@oldStarts date,
+@course varchar(6),
+@starts date,
+@status varchar(4),
+@maxcap numeric(2),
+@trainer numeric(4),
+@loc varchar(14)
+)
+as
+begin
+	declare @home_location varchar(14);
+	declare @home_course_duration int;
+	declare @total_duration int;
+	declare @new_time int;
+	begin try
+		
+		set @home_location = (select loc from emp e
+								left join dept d on e.deptno = d.deptno
+								where empno = @trainer);
+
+		set @home_course_duration = (select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where loc = @home_location and trainer = @trainer)
+
+		set @total_duration = (select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where trainer = @trainer)
+	
+		
+
+		if(@oldCourse <> @course)
+			set @new_time = (select dur from crs where code = @course)
+		else 
+			set @new_time = (select dur from crs where code = @oldCourse)
+
+		if (@loc <> (select loc from offr where course = @oldCourse and starts = @oldStarts))
+			begin
+				set @home_course_duration = (@home_course_duration - @new_time)	
+				set @total_duration = (@total_duration + @new_time)	
+			end
+		else
+			begin
+				set @total_duration = (@total_duration - @new_time)	
+				set @home_course_duration = (@home_course_duration + @new_time)	
+			end
+
+
+		if(100 * @home_course_duration / @total_duration < 50)
+			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
+		else
+			update offr set course = @course, starts = @starts, status = @status, maxcap = @maxcap, trainer = @trainer, loc = @loc where course = @oldCourse and starts = @oldStarts;
+
+	end try
+	begin catch
+		throw
+	end catch
+
+end
+
+exec update_trainer_offerings 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
+
+Create proc delete_trainer_offerings(
+@course varchar(6),
+@starts date,
+@status varchar(4),
+@maxcap numeric(2),
+@trainer numeric(4),
+@loc varchar(14)
+)
+as
+begin
+	declare @home_location varchar(14);
+	declare @home_course_duration int;
+	declare @total_duration int;
+	declare @new_time int;
+	begin try
+
+		set @home_location = (select loc from emp e
+								left join dept d on e.deptno = d.deptno
+								where empno = @trainer);
+
+		set @home_course_duration = (select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where loc = @home_location and trainer = @trainer)
+
+		set @total_duration = (select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where trainer = @trainer)
+
+		set @new_time = (select dur from crs where code = @course)
+
+		if(@loc <> @home_location)
+			set @total_duration = (@total_duration - @new_time)
+		else
+			set @home_course_duration = (@home_course_duration - @new_time)		
+
+
+		if(100 * @home_course_duration / @total_duration < 50)
+			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
+		else
+			update offr set course = @course, starts = @starts, status = @status, maxcap = @maxcap, trainer = @trainer, loc = @loc where course = @course and starts = @starts;
+
+	end try
+	begin catch
+		throw
+	end catch
+
+end
+								

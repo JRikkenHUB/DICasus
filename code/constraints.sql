@@ -55,7 +55,26 @@ end
 
 --5
 
+alter table offr
+drop constraint ofr_unq
 
+create or alter trigger utrg_chk_start_trainer on offr
+after insert, update
+
+as
+
+begin
+	begin try 
+		if exists (select starts, trainer from offr where trainer is not null group by starts, trainer having COUNT(*) > 1)
+			begin
+				raiserror('This trainer is already giving a course on that date', 11, 1)
+			end
+	end try
+	begin catch
+	 throw
+	end catch
+end
+go
 --6
 Create proc chk_course
 (

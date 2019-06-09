@@ -1,6 +1,66 @@
 exec tSQLt.NewTestClass 'ConstraintsCasus';
 
 use COURSE
+--Constraint 1
+create or alter proc [ConstraintsCasus].[Test insert president higher salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'president', null, null, null, 11000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert president higher salary'
+
+create or alter proc [ConstraintsCasus].[Test insert president lower salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'president', null, null, null, 9000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert president lower salary'
+
+create or alter proc [ConstraintsCasus].[Test insert employee higher salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'administrator', null, null, null, 11000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee higher salary'
+
+create or alter proc [ConstraintsCasus].[Test insert employee lower salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'administrator', null, null, null, 9000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee lower salary'
+
+--Constraint 2
+
+
 
 --Constraint 6
 go
@@ -218,6 +278,8 @@ begin
 	insert into crs values ('2', null, null, 20)
 	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
 
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer is spending to much time teaching at a different location'
+
 	exec insert_trainer_offerings('2', '2019-02-01', 'CONF', 1, 1017, 'hawaii')
 
 end
@@ -283,6 +345,8 @@ begin
 	insert into crs values ('2', null, null, 20)
 	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
 	insert into offr values ('2', '2019-02-02', null, null, 20, 'hawaii')
+	
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer is spending to much time teaching at a different location'
 
 	exec update_trainer_offerings('2', '2019-02-01', '1', '2019-02-01', 'CONF', 1, 1017, 'hawaii')
 
@@ -349,6 +413,8 @@ begin
 	insert into crs values ('2', null, null, 20)
 	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
 	insert into offr values ('2', '2019-02-02', null, null, 20, 'hawaii')
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer is spending to much time teaching at a different location'
 
 	exec delete_trainer_offerings('2', '2019-02-02', 1017, 'hawaii')
 

@@ -6,17 +6,24 @@ ALTER TABLE [dbo].[emp]
 ADD CONSTRAINT emp_chk_President CHECK (NOT (job='PRESIDENT' and msal<10000))
 
 --2
-Create trigger chk_manager
+Create trigger chk_administrator_for_manager
 on [dbo].[emp]
-after insert
+after insert, update
 as
 begin
 	declare @managerdepno int
-	select @managerdepno = deptno from [dbo].[emp] where empno = (select max(empno) from dbo.emp) and job = 'PRESIDENT' or job = 'MANAGER'
 
-	if(NOT Exists(select '' from [dbo].[emp] where job = 'ADMINISTRATOR' and deptno = @managerdepno))
-		throw 1, 'No administrator was hired for this manager or president', 1
+	begin try
+		select @managerdepno = deptno from inserted where empno = empno and job = 'PRESIDENT' or job = 'MANAGER'
+
+		if(NOT Exists(select '' from [dbo].[emp] where job = 'ADMINISTRATOR' and deptno = @managerdepno))
+			throw 1, 'No administrator was hired for this manager or president', 1
+	end try
+	begin catch
+		throw
+	end catch
 end
+
 
 --3
 ALTER TABLE [dbo].[emp] ADD CONSTRAINT emp_chk_age CHECK (DATEDIFF(yy, born, GETDATE()) >= 18);

@@ -59,9 +59,72 @@ end
 exec tSQLt.Run 'ConstraintsCasus.Test insert employee lower salary'
 
 --Constraint 2
+create or alter proc [ConstraintsCasus].[Test insert check administrator for manager] 
 
+as
 
+begin
 
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+	insert into emp values (null, null, 'administrator', null, null, null, null, null, null)
+
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+
+create or alter proc [ConstraintsCasus].[Test insert check no administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'No administrator was hired for this manager or president'
+
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+
+create or alter proc [ConstraintsCasus].[Test update check administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+	insert into emp values (null, null, 'administrator', null, null, null, null, null, null)
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+
+	update emp set job = 'president' where job = 'manager'
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test update check administrator for manager'
+
+create or alter proc [ConstraintsCasus].[Test insert check no administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'No administrator was hired for this manager or president'
+
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+
+	--was placed lower so the first insert wouldn't be affacted by the constraint
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+
+	update emp set job = 'president' where job = 'manager'
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
 --Constraint 6
 go
 
@@ -69,7 +132,7 @@ create or alter proc [ConstraintsCasus].[Test insert course without trainer]
 
 as
 
-begin
+begin1
 	exec tSQLt.FakeTable 'dbo', 'offr'
 	exec tSQLt.ApplyTrigger 'offr', 'utrg_chk_start_trainer'
 	

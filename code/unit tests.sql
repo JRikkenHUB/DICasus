@@ -125,6 +125,39 @@ begin
 end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+
+--Constraint 3
+create or alter proc [ConstraintsCasus].[Test insert adult employee] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_age'
+
+	insert into emp values (null, null, null, '1957-12-22', null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
+
+create or alter proc [ConstraintsCasus].[Test insert child employee] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_age'
+
+	insert into emp values (null, null, null, getdate(), null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
+
+--Constraint 4
+
+
 --Constraint 6
 go
 

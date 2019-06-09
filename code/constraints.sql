@@ -201,7 +201,7 @@ begin
 end
 
 --9
-Create proc insert_trainer_offerings(
+create or alter proc insert_trainer_offerings(
 @course varchar(6),
 @starts date,
 @status varchar(4),
@@ -221,13 +221,12 @@ begin
 								left join dept d on e.deptno = d.deptno
 								where empno = @trainer);
 
-		set @home_course_duration = (select sum(dur) from offr o
+		set @home_course_duration = isnull((select sum(dur) from offr o
 								left join crs c on o.course = c.code
-								where loc = @home_location and trainer = @trainer)
-
-		set @total_duration = (select sum(dur) from offr o
+								where loc = @home_location and trainer = @trainer), 0)
+		set @total_duration = isnull((select sum(dur) from offr o
 								left join crs c on o.course = c.code
-								where trainer = @trainer)
+								where trainer = @trainer), 0)
 
 		set @new_time = (select dur from crs where code = @course)
 
@@ -252,7 +251,7 @@ end
 
 exec insert_trainer_offerings 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
 
-Create proc update_trainer_offerings(
+Create or alter proc update_trainer_offerings(
 @oldCourse varchar(6),
 @oldStarts date,
 @course varchar(6),
@@ -274,13 +273,13 @@ begin
 								left join dept d on e.deptno = d.deptno
 								where empno = @trainer);
 
-		set @home_course_duration = (select sum(dur) from offr o
+		set @home_course_duration = isnull((select sum(dur) from offr o
 								left join crs c on o.course = c.code
-								where loc = @home_location and trainer = @trainer)
+								where loc = @home_location and trainer = @trainer), 0)
 
-		set @total_duration = (select sum(dur) from offr o
+		set @total_duration = isnull((select sum(dur) from offr o
 								left join crs c on o.course = c.code
-								where trainer = @trainer)
+								where trainer = @trainer), 0)
 	
 		
 
@@ -313,13 +312,11 @@ begin
 
 end
 
-exec update_trainer_offerings 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
+exec update_trainer_offerings 'RGDEB', '2019-02-02', 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
 
-Create proc delete_trainer_offerings(
+Create or alter proc delete_trainer_offerings(
 @course varchar(6),
 @starts date,
-@status varchar(4),
-@maxcap numeric(2),
 @trainer numeric(4),
 @loc varchar(14)
 )
@@ -335,13 +332,13 @@ begin
 								left join dept d on e.deptno = d.deptno
 								where empno = @trainer);
 
-		set @home_course_duration = (select sum(dur) from offr o
+		set @home_course_duration = isnull((select sum(dur) from offr o
 								left join crs c on o.course = c.code
-								where loc = @home_location and trainer = @trainer)
+								where loc = @home_location and trainer = @trainer), 0)
 
-		set @total_duration = (select sum(dur) from offr o
+		set @total_duration = isnull((select sum(dur) from offr o
 								left join crs c on o.course = c.code
-								where trainer = @trainer)
+								where trainer = @trainer), 0)
 
 		set @new_time = (select dur from crs where code = @course)
 
@@ -354,7 +351,7 @@ begin
 		if(100 * @home_course_duration / @total_duration < 50)
 			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
 		else
-			update offr set course = @course, starts = @starts, status = @status, maxcap = @maxcap, trainer = @trainer, loc = @loc where course = @course and starts = @starts;
+			delete from offr where course = @course and starts = @starts;
 
 	end try
 	begin catch
@@ -362,4 +359,6 @@ begin
 	end catch
 
 end
+
+exec delete_trainer_offerings 'RGDEB', '2019-02-02', 1017, 'hawaii'
 								

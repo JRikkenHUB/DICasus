@@ -156,7 +156,41 @@ end
 exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
 
 --Constraint 4
+create or alter proc [ConstraintsCasus].[Test update sal grade] 
 
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'grd'
+	exec tSQLt.ApplyTrigger 'emp', 'chk_salaryGrd'
+
+	insert into grd values (1,	500.00,	1500.00, 250.00), (2, 1000.00, 2500.00,	500.00)
+
+	update grd set llimit = 400 where grade = 1
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test update sal grade'
+
+create or alter proc [ConstraintsCasus].[Test update lower sal grade] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'grd'
+	exec tSQLt.ApplyTrigger 'emp', 'chk_salaryGrd'
+
+	insert into grd values (1,	500.00,	1500.00, 250.00), (2, 1000.00, 2500.00,	500.00)
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'The inserted values overlap the lower salary grade'
+
+	update grd set llimit = 1600 where grade = 2
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
+
+--Constraint 5
 
 --Constraint 6
 go
@@ -310,7 +344,8 @@ begin
 end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert terminated employee as manager'
---Constraint 7
+--Constraint 8
+
 
 --constraint 9
 

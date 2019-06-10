@@ -24,11 +24,8 @@ begin
 	end catch
 end
 
-
 --3
 ALTER TABLE [dbo].[emp] ADD CONSTRAINT emp_chk_age CHECK (DATEDIFF(yy, born, GETDATE()) >= 18);
-
-
 
 --4
 Create trigger chk_SalaryGdr
@@ -82,6 +79,7 @@ begin
 	end catch
 end
 go
+
 --6
 Create proc chk_course
 (
@@ -186,26 +184,6 @@ begin
 	end catch
 end
 go
---8
-Create proc chk_trainer_course
-(
-	@stud int,
-	@course VARCHAR(50),
-	@starts DATE,
-	@eval int
-)
-as
-begin
-	begin try
-		if(EXISTS(select '' from offr where course = @course and trainer = @stud))
-			throw 50000, 'trainer cannot sign up for their own course',1
-
-		insert into reg values (@stud, @course, @starts, @eval)
-	end try
-	begin catch
-		rollback tran
-	end catch
-end
 
 --8
 Create trigger chk_register_self

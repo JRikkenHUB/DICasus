@@ -372,8 +372,77 @@ end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert terminated employee as manager'
 --Constraint 8
+create proc [ConstraintsCasus].[Test insert student signing up] 
 
+as
 
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+	exec tSQLt.ApplyTrigger 'reg', 'chk_register_self'
+	insert into offr values (null, null, null, null, 2, null)
+
+	insert into reg values (1, null, null, null)
+
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert student signing up'
+
+create proc [ConstraintsCasus].[Test insert trainer signing up] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+	exec tSQLt.ApplyTrigger 'reg', 'chk_register_self'
+	insert into offr values (null, null, null, null, 2, null)
+
+	insert into reg values (2, null, null, null)
+
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert trainer signing up'
+
+create proc [ConstraintsCasus].[Test update student signing up] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+	exec tSQLt.ApplyTrigger 'reg', 'chk_register_self'
+	insert into offr values (null, null, null, null, 2, null)
+
+	insert into reg values (1, null, null, null)
+	update reg set stud = 3 where stud = 1
+
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test update student signing up'
+
+create proc [ConstraintsCasus].[Test update trainer signing up] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+	
+	insert into offr values (null, null, null, null, 2, null)
+
+	insert into reg values (1, null, null, null)
+	exec tSQLt.ApplyTrigger 'reg', 'chk_register_self'
+
+	update reg set stud = 2 where stud = 1
+
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert trainer signing up'
 --constraint 9
 
 go

@@ -207,6 +207,26 @@ begin
 	end catch
 end
 
+--8
+Create trigger chk_register_self
+on [dbo].[reg]
+after insert, update
+as
+begin
+	declare @course varchar(6)
+	declare @starts date
+	begin try
+		set @course = (select course from inserted)
+		set @starts = (select starts from inserted)
+
+		if((select trainer from offr where course = @course and starts = @starts) = (select stud from inserted))
+			throw 1, 'A trainer cannot teach himself', 1
+	end try
+	begin catch
+		throw
+	end catch
+end
+
 --9
 create or alter proc insert_trainer_offerings(
 @course varchar(6),

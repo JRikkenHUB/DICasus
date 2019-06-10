@@ -366,4 +366,64 @@ begin
 end
 
 exec delete_trainer_offerings 'RGDEB', '2019-02-02', 1017, 'hawaii'
+
+go
+--Constraint 10	Offerings with 6 or more registrations must have status confirmed
+create or alter trigger utrg_chk_reg on reg
+after insert
+
+as
+
+begin
+	begin try
+		if exists (select 1 from offr o where exists (
+		select COUNT(*)
+		from reg r
+		where r.starts = o.starts and r.course = o.course
+		having COUNT(*) > 5
+		) and o.status not in('CONF'))
+			begin
+				raiserror('The course must be confirmed', 11, 1)
+			end
+	end try
+	begin catch
+		throw
+	end catch
+end
 								
+go
+
+-- Constraint 11 You are allowed to teach a course only if:
+-- your job type is trainer and
+---		-you have been employed for at least one year 
+---		-or you have attended the course yourself (as participant) 
+
+create or alter proc usp_insert_new_offr
+@course varchar(6),
+@starts date,
+@status varchar(4),
+@maxcap numeric(2),
+@trainer numeric(4),
+@loc varchar(14)
+
+as
+
+begin
+	begin try
+		declare @hired date = (select hired from emp where empno = @trainer)
+		declare @dateDif int = (select DATEDIFF(MONTH, @hired, @starts))
+		if (select job from emp where empno = @trainer) not in ('TRAINER')
+			begin
+				raiserror('Only a trainer can teach courses', 11, 1)
+			end
+		else if @dateDif < 12
+			begin
+				if not exists (select stud from reg where stud = @trainer and course = @course)
+					raiserror('The employee has to follow the course or work here for a year before he can teach.', 11, 1)
+			end
+		insert into offr values(@course, @starts, @status, @maxcap, @trainer, @loc)
+	end try
+	begin catch
+	 throw
+	end catch
+end

@@ -648,3 +648,164 @@ begin
 end
 
 exec tSQLt.Run 'Test delete for trainer with not enough hours at home'
+
+go
+
+--Constraint 10
+go
+create or alter proc [ConstraintsCasus].[Test insert more than 6 regs]
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'reg'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+
+	exec tSQLt.ApplyTrigger 'dbo.reg', 'utrg_chk_reg'
+
+	insert into offr values ('test', '2019-06-07', 'SCHD', null, null, null)
+
+	insert into reg values (1, 'test', '2019-06-07', null),
+	(2, 'test', '2019-06-07', null),
+	(3, 'test', '2019-06-07', null),
+	(4, 'test', '2019-06-07', null),
+	(5, 'test', '2019-06-07', null)
+
+	
+	exec tSQLt.ExpectException @ExpectedMessage = 'The course must be confirmed'
+
+	insert into reg values (6, 'test', '2019-06-07', null)
+end
+exec tSQLt.Run 'ConstraintsCasus.Test insert more than 6 regs'
+
+go
+
+create or alter proc [ConstraintsCasus].[Test insert less than 6 reg]
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'reg'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+
+	exec tSQLt.ApplyTrigger 'dbo.reg', 'utrg_chk_reg'
+
+	insert into offr values ('test', '2019-06-07', 'SCHD', null, null, null)
+
+	insert into reg values (1, 'test', '2019-06-07', null),
+	(2, 'test', '2019-06-07', null),
+	(3, 'test', '2019-06-07', null),
+	(4, 'test', '2019-06-07', null)
+
+	
+	exec tSQLt.ExpectNoException
+
+	insert into reg values (6, 'test', '2019-06-07', null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert less than 6 reg'
+
+go
+
+--Constraint 11
+create or alter proc [ConstraintsCasus].[Test insert employee who isnt a trainer] 
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+
+	insert into emp values (1, null, 'ADMIN', null, null, null, null, null, null);
+	insert into reg values (1, 'test', null, null)
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'Only a trainer can teach courses'
+
+	exec usp_insert_new_offr 'test', null, null, null, 1, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee who isnt a trainer'
+
+go
+
+create or alter proc [ConstraintsCasus].[Test insert employee who is a trainer] 
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+
+	insert into emp values (1, null, 'TRAINER', null, null, null, null, null, null)
+	insert into reg values (1, 'test', null, null)
+
+	exec tSQLt.ExpectNoException
+
+	exec usp_insert_new_offr 'test', null, null, null, 1, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee who is a trainer'
+
+go
+
+create or alter proc [ConstraintsCasus].[Test insert employee who is a trainer, who didnt work for a year and hasnt followed the course] 
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+
+	insert into emp values (1, null, 'TRAINER', null, '2018-06-10', null, null, null, null)
+
+	exec tSQLt.ExpectException 'The employee has to follow the course or work here for a year before he can teach.'
+
+	exec usp_insert_new_offr 'test', '2019-05-10', null, null, 1, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee who is a trainer, who didnt work for a year and hasnt followed the course'
+
+go
+
+create or alter proc [ConstraintsCasus].[Test insert employee who is a trainer, who did work for a year and hasnt followed the course] 
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+
+	insert into emp values (1, null, 'TRAINER', null, '2017-06-10', null, null, null, null)
+
+	exec tSQLt.ExpectNoException
+
+	exec usp_insert_new_offr 'test', '2019-05-10', null, null, 1, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee who is a trainer, who did work for a year and hasnt followed the course'
+
+go
+
+create or alter proc [ConstraintsCasus].[Test insert employee who is a trainer, who didnt work for a year and has followed the course] 
+
+as
+
+begin
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'reg'
+
+	insert into emp values (1, null, 'TRAINER', null, '2018-06-10', null, null, null, null)
+
+	insert into reg values (1, 'test', null, null)
+
+	exec tSQLt.ExpectNoException
+
+	exec usp_insert_new_offr 'test', '2019-05-10', null, null, 1, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee who is a trainer, who didnt work for a year and has followed the course'

@@ -1,34 +1,41 @@
 Use COURSE
 
 --Constraints
---1
+--1	The president of the company earns more than $10.000 monthly.
+-- Only changing the msal in emp could violate this constraint
 ALTER TABLE [dbo].[emp]
 ADD CONSTRAINT emp_chk_President CHECK (NOT (job='PRESIDENT' and msal<10000))
 
---2
-Create trigger chk_administrator_for_manager
-on [dbo].[emp]
+--2	A department that employs the president or a manager should also employ at least one administrator.
+go
+Create or alter trigger chk_administrator_for_manager on emp
 after insert, update
 as
 begin
-	declare @managerdepno int
-
 	begin try
-		select @managerdepno = deptno from inserted where job = 'PRESIDENT' or job = 'MANAGER'
-
-		if(NOT Exists(select '' from [dbo].[emp] where job = 'ADMINISTRATOR' and deptno = @managerdepno))
-			throw 1, 'No administrator was hired for this manager or president', 1
+		if not exists (select 1 from emp where deptno in (select deptno from emp where job = 'PRESIDENT' or job = 'MANAGER') and job = 'ADMIN')
+			begin
+				raiserror('No administrator was hired for this manager or president', 11, 1)
+			end
 	end try
 	begin catch
 		throw
 	end catch
 end
 
+begin tran
+	alter table emp
+	drop constraint emp_fk_dep
+
+	insert into emp values (2000, 'test', 'ADMIN', '1990-10-10', '2010-10-10', 2, 2000, 'test', 20)
+rollback tran
+
 --3
 ALTER TABLE [dbo].[emp] ADD CONSTRAINT emp_chk_age CHECK (DATEDIFF(yy, born, GETDATE()) >= 18);
 
 --4
-Create trigger chk_SalaryGdr
+go
+Create or alter trigger chk_SalaryGrd
 on [dbo].[grd]
 after update
 as
@@ -62,6 +69,8 @@ end
 alter table offr
 drop constraint ofr_unq
 
+go
+
 create or alter trigger utrg_chk_start_trainer on offr
 after insert, update
 
@@ -81,7 +90,7 @@ end
 go
 
 --6
-Create proc chk_course
+Create or alter proc chk_course
 (
 	@course VARCHAR(20),
 	@starts DATE,
@@ -93,13 +102,13 @@ Create proc chk_course
 as
 begin
 	begin try
-		if(not exists (select '' from offr where trainer = @trainer and starts = @starts))
-			throw 50000, 'Trainer already has a course on that day', 1
+		if(exists (select 1 from offr where trainer = @trainer and starts = @starts))
+			raiserror('Trainer already has a course on that day', 11, 1)
 
 		insert into offr values (@course, @starts, @status, @maxcap, @trainer, @loc)
 	end try
 	begin catch
-		ROLLBACK TRAN
+		throw
 	end catch
 end
 
@@ -186,7 +195,7 @@ end
 go
 
 --8
-Create proc chk_trainer_course
+Create or alter proc chk_trainer_course
 (
 	@stud int,
 	@course VARCHAR(50),
@@ -196,13 +205,13 @@ Create proc chk_trainer_course
 as
 begin
 	begin try
-		if(EXISTS(select '' from offr where course = @course and trainer = @stud))
-			throw 50000, 'trainer cannot sign up for their own course',1
+		if(EXISTS(select 1 from offr where course = @course and trainer = @stud))
+			raiserror('trainer cannot sign up for their own course', 11, 1)
 
 		insert into reg values (@stud, @course, @starts, @eval)
 	end try
 	begin catch
-		rollback tran
+		throw
 	end catch
 end
 

@@ -11,6 +11,8 @@ begin
 	exec tSQLt.FakeTable 'dbo', 'emp'
 	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
 
+	exec tSQLt.ExpectNoException
+
 	insert into emp values (null, null, 'president', null, null, null, 11000, null, null)
 end
 
@@ -24,6 +26,8 @@ begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
 	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	exec tSQLt.ExpectException
 
 	insert into emp values (null, null, 'president', null, null, null, 9000, null, null)
 end
@@ -39,6 +43,8 @@ begin
 	exec tSQLt.FakeTable 'dbo', 'emp'
 	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
 
+	exec tSQLt.ExpectException
+
 	insert into emp values (null, null, 'administrator', null, null, null, 11000, null, null)
 end
 
@@ -53,6 +59,8 @@ begin
 	exec tSQLt.FakeTable 'dbo', 'emp'
 	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
 
+	exec tSQLt.ExpectNoException
+
 	insert into emp values (null, null, 'administrator', null, null, null, 9000, null, null)
 end
 
@@ -66,10 +74,10 @@ as
 begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
-	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
-	insert into emp values (null, null, 'administrator', null, null, null, null, null, null)
-
-	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+	insert into emp values (null, null, 'ADMIN', null, null, null, null, null, 10)
+	exec tSQLt.ApplyTrigger 'emp', 'chk_administrator_for_manager'
+	exec tSQLt.ExpectNoException
+	insert into emp values (null, null, 'MANAGER', null, null, null, null, null, 10)
 end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
@@ -81,14 +89,14 @@ as
 begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
-	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+	exec tSQLt.ApplyTrigger 'emp', 'chk_administrator_for_manager'
 
 	exec tSQLt.ExpectException @ExpectedMessage = 'No administrator was hired for this manager or president'
 
-	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+	insert into emp values (null, null, 'MANAGER', null, null, null, null, null, 10)
 end
 
-exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+exec tSQLt.Run 'ConstraintsCasus.Test insert check no administrator for manager'
 
 create or alter proc [ConstraintsCasus].[Test update check administrator for manager] 
 
@@ -97,10 +105,10 @@ as
 begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
-	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
-	insert into emp values (null, null, 'administrator', null, null, null, null, null, null)
-	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
-
+	insert into emp values (null, null, 'ADMIN', null, null, null, null, null, 10)
+	exec tSQLt.ApplyTrigger 'emp', 'chk_administrator_for_manager'
+	insert into emp values (null, null, 'manager', null, null, null, null, null, 10)
+	exec tSQLt.ExpectNoException 'No administrator was hired for this manager or president'
 	update emp set job = 'president' where job = 'manager'
 end
 
@@ -114,17 +122,16 @@ begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
 
-	exec tSQLt.ExpectException @ExpectedMessage = 'No administrator was hired for this manager or president'
 
-	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+	insert into emp values (null, null, 'manager', null, null, null, null, null, 10)
 
 	--was placed lower so the first insert wouldn't be affacted by the constraint
-	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
-
+	exec tSQLt.ApplyTrigger 'emp', 'chk_administrator_for_manager'
+	exec tSQLt.ExpectException 'No administrator was hired for this manager or president'
 	update emp set job = 'president' where job = 'manager'
 end
 
-exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+exec tSQLt.Run 'ConstraintsCasus.Test insert check no administrator for manager'
 
 --Constraint 3
 create or alter proc [ConstraintsCasus].[Test insert adult employee] 
@@ -135,7 +142,7 @@ begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
 	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_age'
-
+	exec tSQLt.ExpectNoException
 	insert into emp values (null, null, null, '1957-12-22', null, null, null, null, null)
 end
 
@@ -149,7 +156,7 @@ begin
 
 	exec tSQLt.FakeTable 'dbo', 'emp'
 	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_age'
-
+	exec tSQLt.ExpectException
 	insert into emp values (null, null, null, getdate(), null, null, null, null, null)
 end
 
@@ -163,10 +170,10 @@ as
 begin
 
 	exec tSQLt.FakeTable 'dbo', 'grd'
-	exec tSQLt.ApplyTrigger 'emp', 'chk_salaryGrd'
+	exec tSQLt.ApplyTrigger'grd', 'chk_salaryGrd'
 
 	insert into grd values (1,	500.00,	1500.00, 250.00), (2, 1000.00, 2500.00,	500.00)
-
+	exec tSQLt.ExpectNoException
 	update grd set llimit = 400 where grade = 1
 end
 
@@ -179,7 +186,7 @@ as
 begin
 
 	exec tSQLt.FakeTable 'dbo', 'grd'
-	exec tSQLt.ApplyTrigger 'emp', 'chk_salaryGrd'
+	exec tSQLt.ApplyTrigger 'grd', 'chk_salaryGrd'
 
 	insert into grd values (1,	500.00,	1500.00, 250.00), (2, 1000.00, 2500.00,	500.00)
 
@@ -333,7 +340,7 @@ as
 
 begin 
 	exec tSQLt.FakeTable 'dbo', 'offr'
-
+	insert into offr values ('1', '2019-02-02', null, null, 1017, null)
 	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer already has a course on that day'
 
 	exec chk_course '1', '2019-02-02', null, null, 1017, null
@@ -349,14 +356,6 @@ create proc [ConstraintsCasus].[Test insert terminated employee as manager]
 as
 
 begin
-	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
-	--DROP TABLE [ConstraintsCasus].[verwacht]
-
-	--SELECT TOP 0 * 
-	--INTO [ConstraintsCasus].[verwacht]
-	--FROM dbo.memp;
-	
-	--insert into [ConstraintsCasus].[verwacht] values
 
 
 	exec tSQLt.FakeTable 'dbo', 'memp'
@@ -372,7 +371,7 @@ end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert terminated employee as manager'
 --Constraint 8
-create proc [ConstraintsCasus].[Test insert student signing up] 
+create or alter proc [ConstraintsCasus].[Test insert student signing up] 
 
 as
 
@@ -380,16 +379,16 @@ begin
 
 	exec tSQLt.FakeTable 'dbo', 'offr'
 	exec tSQLt.FakeTable 'dbo', 'reg'
-	exec tSQLt.ApplyTrigger 'reg', 'chk_register_self'
-	insert into offr values (null, null, null, null, 2, null)
 
-	insert into reg values (1, null, null, null)
+	insert into offr values ('test', null, null, null, 2, null)
+	exec tSQLt.ExpectNoException
+	exec chk_trainer_course 1, 'test', null, null
 
 end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert student signing up'
 
-create proc [ConstraintsCasus].[Test insert trainer signing up] 
+create or alter proc [ConstraintsCasus].[Test insert trainer signing up] 
 
 as
 
@@ -397,10 +396,10 @@ begin
 
 	exec tSQLt.FakeTable 'dbo', 'offr'
 	exec tSQLt.FakeTable 'dbo', 'reg'
-	exec tSQLt.ApplyTrigger 'reg', 'chk_register_self'
-	insert into offr values (null, null, null, null, 2, null)
 
-	insert into reg values (2, null, null, null)
+	insert into offr values ('test', null, null, null, 2, null)
+	exec tSQLt.ExpectException
+	exec chk_trainer_course 2, 'test', null, null
 
 end
 

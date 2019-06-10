@@ -14,7 +14,7 @@ begin
 	declare @managerdepno int
 
 	begin try
-		select @managerdepno = deptno from inserted where empno = empno and job = 'PRESIDENT' or job = 'MANAGER'
+		select @managerdepno = deptno from inserted where job = 'PRESIDENT' or job = 'MANAGER'
 
 		if(NOT Exists(select '' from [dbo].[emp] where job = 'ADMINISTRATOR' and deptno = @managerdepno))
 			throw 1, 'No administrator was hired for this manager or president', 1

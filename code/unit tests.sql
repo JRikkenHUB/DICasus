@@ -191,15 +191,13 @@ end
 exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
 
 --Constraint 5
-
---Constraint 6
 go
 
 create or alter proc [ConstraintsCasus].[Test insert course without trainer] 
 
 as
 
-begin1
+begin
 	exec tSQLt.FakeTable 'dbo', 'offr'
 	exec tSQLt.ApplyTrigger 'offr', 'utrg_chk_start_trainer'
 	
@@ -313,6 +311,35 @@ begin
 end
 
 exec tSQLt.Run 'ConstraintsCasus.Test update course with unique combination'
+
+--Constraint 6
+create or alter proc [ConstraintsCasus].[Test trainer course plannen] 
+
+as
+
+begin 
+	exec tSQLt.FakeTable 'dbo', 'offr'
+
+	exec tSQLt.ExpectNoException
+
+	exec chk_course '1', '2019-02-02', null, null, 1017, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test trainer course plannen'
+
+create or alter proc [ConstraintsCasus].[Test trainer two courses plannen] 
+
+as
+
+begin 
+	exec tSQLt.FakeTable 'dbo', 'offr'
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer already has a course on that day'
+
+	exec chk_course '1', '2019-02-02', null, null, 1017, null
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test trainer two courses plannen'
 
 --Constraint 7
 go

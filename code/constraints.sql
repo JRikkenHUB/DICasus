@@ -6,17 +6,24 @@ ALTER TABLE [dbo].[emp]
 ADD CONSTRAINT emp_chk_President CHECK (NOT (job='PRESIDENT' and msal<10000))
 
 --2
-Create trigger chk_manager
+Create trigger chk_administrator_for_manager
 on [dbo].[emp]
-after insert
+after insert, update
 as
 begin
 	declare @managerdepno int
-	select @managerdepno = deptno from [dbo].[emp] where empno = (select max(empno) from dbo.emp) and job = 'PRESIDENT' or job = 'MANAGER'
 
-	if(NOT Exists(select '' from [dbo].[emp] where job = 'ADMINISTRATOR' and deptno = @managerdepno))
-		throw 1, 'No administrator was hired for this manager or president', 1
+	begin try
+		select @managerdepno = deptno from inserted where empno = empno and job = 'PRESIDENT' or job = 'MANAGER'
+
+		if(NOT Exists(select '' from [dbo].[emp] where job = 'ADMINISTRATOR' and deptno = @managerdepno))
+			throw 1, 'No administrator was hired for this manager or president', 1
+	end try
+	begin catch
+		throw
+	end catch
 end
+
 
 --3
 ALTER TABLE [dbo].[emp] ADD CONSTRAINT emp_chk_age CHECK (DATEDIFF(yy, born, GETDATE()) >= 18);
@@ -199,3 +206,166 @@ begin
 		rollback tran
 	end catch
 end
+
+--9
+create or alter proc insert_trainer_offerings(
+@course varchar(6),
+@starts date,
+@status varchar(4),
+@maxcap numeric(2),
+@trainer numeric(4),
+@loc varchar(14)
+)
+as
+begin
+	declare @home_location varchar(14);
+	declare @home_course_duration int;
+	declare @total_duration int;
+	declare @new_time int;
+	begin try
+		
+		set @home_location = (select loc from emp e
+								left join dept d on e.deptno = d.deptno
+								where empno = @trainer);
+
+		set @home_course_duration = isnull((select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where loc = @home_location and trainer = @trainer), 0)
+		set @total_duration = isnull((select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where trainer = @trainer), 0)
+
+		set @new_time = (select dur from crs where code = @course)
+
+
+		if(@loc <> @home_location)
+			set @total_duration = (@total_duration + @new_time)
+		else
+			set @home_course_duration = (@home_course_duration + @new_time)
+
+
+		if(100 * @home_course_duration / @total_duration < 50)
+			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
+		else
+			insert into offr values (@course, @starts, @status, @maxcap, @trainer, @loc);
+
+	end try
+	begin catch
+		throw
+	end catch
+
+end
+
+exec insert_trainer_offerings 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
+
+Create or alter proc update_trainer_offerings(
+@oldCourse varchar(6),
+@oldStarts date,
+@course varchar(6),
+@starts date,
+@status varchar(4),
+@maxcap numeric(2),
+@trainer numeric(4),
+@loc varchar(14)
+)
+as
+begin
+	declare @home_location varchar(14);
+	declare @home_course_duration int;
+	declare @total_duration int;
+	declare @new_time int;
+	begin try
+		
+		set @home_location = (select loc from emp e
+								left join dept d on e.deptno = d.deptno
+								where empno = @trainer);
+
+		set @home_course_duration = isnull((select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where loc = @home_location and trainer = @trainer), 0)
+
+		set @total_duration = isnull((select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where trainer = @trainer), 0)
+	
+		
+
+		if(@oldCourse <> @course)
+			set @new_time = (select dur from crs where code = @course)
+		else 
+			set @new_time = (select dur from crs where code = @oldCourse)
+
+		if (@loc <> (select loc from offr where course = @oldCourse and starts = @oldStarts))
+			begin
+				set @home_course_duration = (@home_course_duration - @new_time)	
+				set @total_duration = (@total_duration + @new_time)	
+			end
+		else
+			begin
+				set @total_duration = (@total_duration - @new_time)	
+				set @home_course_duration = (@home_course_duration + @new_time)	
+			end
+
+
+		if(100 * @home_course_duration / @total_duration < 50)
+			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
+		else
+			update offr set course = @course, starts = @starts, status = @status, maxcap = @maxcap, trainer = @trainer, loc = @loc where course = @oldCourse and starts = @oldStarts;
+
+	end try
+	begin catch
+		throw
+	end catch
+
+end
+
+exec update_trainer_offerings 'RGDEB', '2019-02-02', 'RGDEB', '2019-02-01', 'CONF', 20, 1017, 'hawaii'
+
+Create or alter proc delete_trainer_offerings(
+@course varchar(6),
+@starts date,
+@trainer numeric(4),
+@loc varchar(14)
+)
+as
+begin
+	declare @home_location varchar(14);
+	declare @home_course_duration int;
+	declare @total_duration int;
+	declare @new_time int;
+	begin try
+
+		set @home_location = (select loc from emp e
+								left join dept d on e.deptno = d.deptno
+								where empno = @trainer);
+
+		set @home_course_duration = isnull((select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where loc = @home_location and trainer = @trainer), 0)
+
+		set @total_duration = isnull((select sum(dur) from offr o
+								left join crs c on o.course = c.code
+								where trainer = @trainer), 0)
+
+		set @new_time = (select dur from crs where code = @course)
+
+		if(@loc <> @home_location)
+			set @total_duration = (@total_duration - @new_time)
+		else
+			set @home_course_duration = (@home_course_duration - @new_time)		
+
+
+		if(100 * @home_course_duration / @total_duration < 50)
+			RAISERROR('Trainer is spending to much time teaching at a different location', 16, 1)
+		else
+			delete from offr where course = @course and starts = @starts;
+
+	end try
+	begin catch
+		throw
+	end catch
+
+end
+
+exec delete_trainer_offerings 'RGDEB', '2019-02-02', 1017, 'hawaii'
+								

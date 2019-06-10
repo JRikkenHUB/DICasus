@@ -1,6 +1,162 @@
 exec tSQLt.NewTestClass 'ConstraintsCasus';
 
 use COURSE
+--Constraint 1
+create or alter proc [ConstraintsCasus].[Test insert president higher salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'president', null, null, null, 11000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert president higher salary'
+
+create or alter proc [ConstraintsCasus].[Test insert president lower salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'president', null, null, null, 9000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert president lower salary'
+
+create or alter proc [ConstraintsCasus].[Test insert employee higher salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'administrator', null, null, null, 11000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee higher salary'
+
+create or alter proc [ConstraintsCasus].[Test insert employee lower salary] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_President'
+
+	insert into emp values (null, null, 'administrator', null, null, null, 9000, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert employee lower salary'
+
+--Constraint 2
+create or alter proc [ConstraintsCasus].[Test insert check administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+	insert into emp values (null, null, 'administrator', null, null, null, null, null, null)
+
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+
+create or alter proc [ConstraintsCasus].[Test insert check no administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'No administrator was hired for this manager or president'
+
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+
+create or alter proc [ConstraintsCasus].[Test update check administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+	insert into emp values (null, null, 'administrator', null, null, null, null, null, null)
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+
+	update emp set job = 'president' where job = 'manager'
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test update check administrator for manager'
+
+create or alter proc [ConstraintsCasus].[Test insert check no administrator for manager] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'No administrator was hired for this manager or president'
+
+	insert into emp values (null, null, 'manager', null, null, null, null, null, null)
+
+	--was placed lower so the first insert wouldn't be affacted by the constraint
+	exec tSQLt.ApplyTrigger 'emp', 'emp_chk_President'
+
+	update emp set job = 'president' where job = 'manager'
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert check administrator for manager'
+
+--Constraint 3
+create or alter proc [ConstraintsCasus].[Test insert adult employee] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_age'
+
+	insert into emp values (null, null, null, '1957-12-22', null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
+
+create or alter proc [ConstraintsCasus].[Test insert child employee] 
+
+as
+
+begin
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.ApplyConstraint 'emp', 'emp_chk_age'
+
+	insert into emp values (null, null, null, getdate(), null, null, null, null, null)
+end
+
+exec tSQLt.Run 'ConstraintsCasus.Test insert adult employee'
+
+--Constraint 4
+
 
 --Constraint 6
 go
@@ -9,7 +165,7 @@ create or alter proc [ConstraintsCasus].[Test insert course without trainer]
 
 as
 
-begin
+begin1
 	exec tSQLt.FakeTable 'dbo', 'offr'
 	exec tSQLt.ApplyTrigger 'offr', 'utrg_chk_start_trainer'
 	
@@ -154,3 +310,210 @@ begin
 end
 
 exec tSQLt.Run 'ConstraintsCasus.Test insert terminated employee as manager'
+--Constraint 7
+
+--constraint 9
+
+go
+
+create proc [ConstraintsCasus].[Test insert for trainer with enough hours at home] 
+
+as
+
+begin
+	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
+	--DROP TABLE [ConstraintsCasus].[verwacht]
+
+	--SELECT TOP 0 * 
+	--INTO [ConstraintsCasus].[verwacht]
+	--FROM dbo.memp;
+	
+	--insert into [ConstraintsCasus].[verwacht] values
+
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'dept'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'crs'
+
+	insert into emp values (1, null, null, null, null, null, null, null, 1)
+	insert into dept values (1, null, null, 'hawaii')
+	insert into crs values (1, null, null, 10)
+	insert into crs values ('2', null, null, 20)
+	insert into offr values ('1', '2019-02-01', 'CONF', 1, 1017, 'USA')
+
+	exec insert_trainer_offerings('2', '2019-02-01', 'CONF', 20, 1017, 'hawaii')
+
+end
+
+exec tSQLt.Run 'Test insert for trainer with enough hours at home'
+
+create proc [ConstraintsCasus].[Test insert for trainer with not enough hours at home] 
+
+as
+
+begin
+	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
+	--DROP TABLE [ConstraintsCasus].[verwacht]
+
+	--SELECT TOP 0 * 
+	--INTO [ConstraintsCasus].[verwacht]
+	--FROM dbo.memp;
+	
+	--insert into [ConstraintsCasus].[verwacht] values
+
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'dept'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'crs'
+
+	insert into emp values (1, null, null, null, null, null, null, null, 1)
+	insert into dept values (1, null, null, null)
+	insert into crs values (1, null, null, 10)
+	insert into crs values ('2', null, null, 20)
+	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer is spending to much time teaching at a different location'
+
+	exec insert_trainer_offerings('2', '2019-02-01', 'CONF', 1, 1017, 'hawaii')
+
+end
+
+exec tSQLt.Run 'Test insert for trainer with not enough hours at home'
+
+create proc [ConstraintsCasus].[Test update for trainer with enough hours at home] 
+
+as
+
+begin
+	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
+	--DROP TABLE [ConstraintsCasus].[verwacht]
+
+	--SELECT TOP 0 * 
+	--INTO [ConstraintsCasus].[verwacht]
+	--FROM dbo.memp;
+	
+	--insert into [ConstraintsCasus].[verwacht] values
+
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'dept'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'crs'
+
+	insert into emp values (1, null, null, null, null, null, null, null, 1)
+	insert into dept values (1, null, null, null)
+	insert into crs values (1, null, null, 10)
+	insert into crs values ('2', null, null, 20)
+	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
+	insert into offr values ('2', '2019-02-02', null, null, 20, 'hawaii')
+
+	exec update_trainer_offerings('2', '2019-02-01', '2', '2019-02-01', 'CONF', 21, 1017, 'hawaii')
+
+end
+
+exec tSQLt.Run 'Test update for trainer with enough hours at home'
+
+create proc [ConstraintsCasus].[Test update for trainer with not enough hours at home] 
+
+as
+
+begin
+	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
+	--DROP TABLE [ConstraintsCasus].[verwacht]
+
+	--SELECT TOP 0 * 
+	--INTO [ConstraintsCasus].[verwacht]
+	--FROM dbo.memp;
+	
+	--insert into [ConstraintsCasus].[verwacht] values
+
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'dept'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'crs'
+
+	insert into emp values (1, null, null, null, null, null, null, null, 1)
+	insert into dept values (1, null, null, null)
+	insert into crs values (1, null, null, 10)
+	insert into crs values ('2', null, null, 20)
+	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
+	insert into offr values ('2', '2019-02-02', null, null, 20, 'hawaii')
+	
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer is spending to much time teaching at a different location'
+
+	exec update_trainer_offerings('2', '2019-02-01', '1', '2019-02-01', 'CONF', 1, 1017, 'hawaii')
+
+end
+
+exec tSQLt.Run 'Test update for trainer with not enough hours at home'
+
+create proc [ConstraintsCasus].[Test delete for trainer with enough hours at home] 
+
+as
+
+begin
+	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
+	--DROP TABLE [ConstraintsCasus].[verwacht]
+
+	--SELECT TOP 0 * 
+	--INTO [ConstraintsCasus].[verwacht]
+	--FROM dbo.memp;
+	
+	--insert into [ConstraintsCasus].[verwacht] values
+
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'dept'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'crs'
+
+	insert into emp values (1, null, null, null, null, null, null, null, 1)
+	insert into dept values (1, null, null, null)
+	insert into crs values (1, null, null, 10)
+	insert into crs values ('2', null, null, 20)
+	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
+	insert into offr values ('2', '2019-02-02', null, null, 20, 'hawaii')
+
+	exec delete_trainer_offerings('1', '2019-02-02', 1017, 'america')
+
+end
+
+exec tSQLt.Run 'Test delete for trainer with enough hours at home'
+
+create proc [ConstraintsCasus].[Test delete for trainer with not enough hours at home] 
+
+as
+
+begin
+	--IF OBJECT_ID('[ConstraintsCasus].[verwacht]','Table') IS NOT NULL
+	--DROP TABLE [ConstraintsCasus].[verwacht]
+
+	--SELECT TOP 0 * 
+	--INTO [ConstraintsCasus].[verwacht]
+	--FROM dbo.memp;
+	
+	--insert into [ConstraintsCasus].[verwacht] values
+
+
+	exec tSQLt.FakeTable 'dbo', 'emp'
+	exec tSQLt.FakeTable 'dbo', 'dept'
+	exec tSQLt.FakeTable 'dbo', 'offr'
+	exec tSQLt.FakeTable 'dbo', 'crs'
+
+	insert into emp values (1, null, null, null, null, null, null, null, 1)
+	insert into dept values (1, null, null, null)
+	insert into crs values (1, null, null, 10)
+	insert into crs values ('2', null, null, 20)
+	insert into offr values ('1', '2019-02-02', null, null, 20, 'america')
+	insert into offr values ('2', '2019-02-02', null, null, 20, 'hawaii')
+
+	exec tSQLt.ExpectException @ExpectedMessage = 'Trainer is spending to much time teaching at a different location'
+
+	exec delete_trainer_offerings('2', '2019-02-02', 1017, 'hawaii')
+
+end
+
+exec tSQLt.Run 'Test delete for trainer with not enough hours at home'

@@ -186,22 +186,23 @@ end
 go
 
 --8
-Create trigger chk_register_self
-on [dbo].[reg]
-after insert, update
+Create proc chk_trainer_course
+(
+	@stud int,
+	@course VARCHAR(50),
+	@starts DATE,
+	@eval int
+)
 as
 begin
-	declare @course varchar(6)
-	declare @starts date
 	begin try
-		set @course = (select course from inserted)
-		set @starts = (select starts from inserted)
+		if(EXISTS(select '' from offr where course = @course and trainer = @stud))
+			throw 50000, 'trainer cannot sign up for their own course',1
 
-		if((select trainer from offr where course = @course and starts = @starts) = (select stud from inserted))
-			throw 1, 'A trainer cannot teach himself', 1
+		insert into reg values (@stud, @course, @starts, @eval)
 	end try
 	begin catch
-		throw
+		rollback tran
 	end catch
 end
 

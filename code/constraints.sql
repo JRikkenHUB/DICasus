@@ -199,27 +199,3 @@ begin
 		rollback tran
 	end catch
 end
-
-go
---Constraint 10	Offerings with 6 or more registrations must have status confirmed
-create or alter trigger utrg_chk_reg on reg
-after insert
-
-as
-
-begin
-	begin try
-		if exists (select 1 from offr o where exists (
-		select COUNT(*)
-		from reg r
-		where r.starts = o.starts and r.course = o.course
-		having COUNT(*) > 5
-		) and o.status not in('CONF'))
-			begin
-				raiserror('The course must be confirmed', 11, 1)
-			end
-	end try
-	begin catch
-		throw
-	end catch
-end
